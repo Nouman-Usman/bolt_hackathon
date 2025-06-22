@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useUser } from '../contexts/UserContext';
-import { Brain, Clock, CircleCheck, CircleX, ChevronRight, Sparkles } from 'lucide-react';
+import { Brain, Clock, CheckCircle as CircleCheck, Circle as CircleX, ChevronRight, Sparkles } from 'lucide-react';
 import translations from '../utils/translations';
 import AIQuizGenerator from '../components/quiz/AIQuizGenerator';
 import { GeneratedQuestion } from '../services/aiAgents';
