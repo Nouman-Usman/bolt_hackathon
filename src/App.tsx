@@ -16,6 +16,8 @@ import SettingsPage from './pages/SettingsPage';
 import EnhancedPricingPage from './pages/EnhancedPricingPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import AuthPage from './pages/AuthPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
           <UserProvider>
             <Routes>
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
+              <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
               <Route path="/pricing" element={<EnhancedPricingPage />} />
               <Route path="/payment-success" element={<PaymentSuccessPage />} />
               
