@@ -59,6 +59,43 @@ const AuthPage = () => {
     return true;
   };
 
+  const getErrorMessage = (error: any, mode: string) => {
+    const errorMessage = error?.message || '';
+    
+    if (mode === 'signup') {
+      if (errorMessage.includes('User already registered') || errorMessage.includes('user_already_exists')) {
+        return 'This email is already registered. Please sign in instead or use a different email address.';
+      }
+      if (errorMessage.includes('Password should be at least')) {
+        return 'Password must be at least 8 characters long.';
+      }
+      if (errorMessage.includes('Invalid email')) {
+        return 'Please enter a valid email address.';
+      }
+    }
+    
+    if (mode === 'signin') {
+      if (errorMessage.includes('Invalid login credentials') || errorMessage.includes('invalid_credentials')) {
+        return 'Invalid email or password. Please check your credentials and try again.';
+      }
+      if (errorMessage.includes('Email not confirmed')) {
+        return 'Please verify your email address before signing in. Check your inbox for the verification link.';
+      }
+      if (errorMessage.includes('Too many requests')) {
+        return 'Too many sign-in attempts. Please wait a few minutes before trying again.';
+      }
+    }
+    
+    if (mode === 'reset') {
+      if (errorMessage.includes('User not found')) {
+        return 'No account found with this email address.';
+      }
+    }
+    
+    // Return the original error message if no specific handling is needed
+    return errorMessage || 'An unexpected error occurred. Please try again.';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -78,7 +115,16 @@ const AuthPage = () => {
         });
 
         if (error) {
-          setError(error.message || 'Failed to create account');
+          const friendlyError = getErrorMessage(error, 'signup');
+          setError(friendlyError);
+          
+          // If user already exists, suggest switching to sign in
+          if (friendlyError.includes('already registered')) {
+            setTimeout(() => {
+              setMode('signin');
+              setError('');
+            }, 3000);
+          }
         } else if (needsVerification) {
           setSuccess('Account created! Please check your email to verify your account before signing in.');
           setMode('verify');
@@ -89,7 +135,8 @@ const AuthPage = () => {
         const { error } = await signIn(formData.email, formData.password);
         
         if (error) {
-          setError(error.message || 'Failed to sign in');
+          const friendlyError = getErrorMessage(error, 'signin');
+          setError(friendlyError);
         } else {
           navigate(from, { replace: true });
         }
@@ -97,13 +144,15 @@ const AuthPage = () => {
         const { error } = await resetPassword(formData.email);
         
         if (error) {
-          setError(error.message || 'Failed to send reset email');
+          const friendlyError = getErrorMessage(error, 'reset');
+          setError(friendlyError);
         } else {
           setSuccess('Password reset email sent! Check your inbox for instructions.');
         }
       }
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
+      const friendlyError = getErrorMessage(err, mode);
+      setError(friendlyError);
     } finally {
       setLoading(false);
     }
@@ -114,7 +163,8 @@ const AuthPage = () => {
     const { error } = await resendVerification();
     
     if (error) {
-      setError(error.message || 'Failed to resend verification email');
+      const friendlyError = getErrorMessage(error, 'verify');
+      setError(friendlyError);
     } else {
       setSuccess('Verification email sent! Please check your inbox.');
     }
@@ -168,10 +218,25 @@ const AuthPage = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center"
+              className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start"
             >
-              <AlertCircle size={16} className="text-red-500 mr-2 flex-shrink-0" />
-              <span className="text-red-700 text-sm">{error}</span>
+              <AlertCircle size={16} className="text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <span className="text-red-700 text-sm">{error}</span>
+                {error.includes('already registered') && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => {
+                        setMode('signin');
+                        setError('');
+                      }}
+                      className="text-xs text-red-600 underline hover:text-red-800"
+                    >
+                      Switch to Sign In
+                    </button>
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
           
