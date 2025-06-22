@@ -32,6 +32,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Sync with auth context
   useEffect(() => {
+    console.log('UserContext - userProfile changed:', !!userProfile, userProfile?.name);
     setUser(userProfile);
     if (userProfile?.languagePreference) {
       setLanguage(userProfile.languagePreference);
@@ -47,7 +48,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [language, user, updateProfile]);
 
+  // Check if user has completed onboarding
   const isOnboarded = Boolean(user && user.grade && user.board && user.subjects?.length);
+
+  console.log('UserContext - isOnboarded:', isOnboarded, 'user:', !!user, 'grade:', user?.grade, 'board:', user?.board, 'subjects:', user?.subjects?.length);
 
   const logout = async () => {
     await signOut();

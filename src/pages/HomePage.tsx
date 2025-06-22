@@ -1,22 +1,51 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import { useAuth } from '../contexts/AuthContext';
 import { BookOpen, Brain, BarChart3, MessageSquare, ArrowRight } from 'lucide-react';
 import translations from '../utils/translations';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const HomePage = () => {
   const { user, isOnboarded, language } = useUser();
+  const { loading } = useAuth();
   const navigate = useNavigate();
   const t = translations[language];
 
   useEffect(() => {
-    if (!isOnboarded) {
+    console.log('HomePage - loading:', loading, 'user:', !!user, 'isOnboarded:', isOnboarded);
+    
+    // Only redirect if not loading and user exists but is not onboarded
+    if (!loading && user && !isOnboarded) {
+      console.log('Redirecting to onboarding');
       navigate('/onboarding');
     }
-  }, [isOnboarded, navigate]);
+  }, [loading, user, isOnboarded, navigate]);
 
+  // Show loading while auth is still loading
+  if (loading) {
+    console.log('HomePage - showing loading spinner');
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size={32} />
+      </div>
+    );
+  }
+
+  // If no user after loading is complete, ProtectedRoute will handle redirect
   if (!user) {
-    return null; // Will redirect in useEffect
+    console.log('HomePage - no user found');
+    return null;
+  }
+
+  // If user exists but not onboarded, show loading while redirecting
+  if (!isOnboarded) {
+    console.log('HomePage - user not onboarded, showing loading while redirecting');
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size={32} />
+      </div>
+    );
   }
 
   const getGreeting = () => {

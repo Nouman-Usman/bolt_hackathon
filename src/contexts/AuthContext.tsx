@@ -53,15 +53,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { session: currentSession } = await auth.getCurrentSession();
         
         if (mounted) {
+          console.log('Initial session:', currentSession?.user?.email);
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           setEmailVerified(currentSession?.user?.email_confirmed_at ? true : false);
           
           if (currentSession?.user) {
             await loadUserProfile(currentSession.user.id);
+          } else {
+            // No session, set loading to false immediately
+            setLoading(false);
           }
-          
-          setLoading(false);
         }
       } catch (error) {
         console.error('Error getting initial session:', error);
@@ -86,9 +88,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await loadUserProfile(session.user.id);
         } else {
           setUserProfile(null);
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     });
 
@@ -100,14 +101,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadUserProfile = async (userId: string) => {
     try {
+      console.log('Loading user profile for:', userId);
       const { data, error } = await db.getUser(userId);
       
       if (error) {
         console.error('Error loading user profile:', error);
+        // If error is because user doesn't exist, that's okay - they need onboarding
+        setUserProfile(null);
+        setLoading(false);
         return;
       }
       
       if (data) {
+        console.log('User profile loaded:', data.name);
         setUserProfile({
           id: data.id,
           name: data.name,
@@ -121,9 +127,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           createdAt: new Date(data.created_at),
           lastActive: data.last_active ? new Date(data.last_active) : undefined,
         });
+      } else {
+        console.log('No user profile found, user needs onboarding');
+        setUserProfile(null);
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
+      setUserProfile(null);
+    } finally {
+      // Always set loading to false after attempting to load profile
+      setLoading(false);
     }
   };
 

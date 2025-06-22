@@ -19,7 +19,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const [resendMessage, setResendMessage] = useState('');
 
   useEffect(() => {
+    console.log('ProtectedRoute - loading:', loading, 'user:', !!user);
+    
     if (!loading && !user) {
+      console.log('No user found, redirecting to auth');
       navigate('/auth');
     }
   }, [user, loading, navigate]);
@@ -39,7 +42,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     setResendLoading(false);
   };
 
+  // Show loading spinner while auth is loading
   if (loading) {
+    console.log('ProtectedRoute - showing loading spinner');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size={32} />
@@ -47,7 +52,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
+  // If no user after loading is complete, return null (will redirect in useEffect)
   if (!user) {
+    console.log('ProtectedRoute - no user, returning null');
     return null;
   }
 
@@ -108,6 +115,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
+  console.log('ProtectedRoute - rendering children');
   return <>{children}</>;
 };
 
