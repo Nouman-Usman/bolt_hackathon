@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useUser } from '../contexts/UserContext';
-import { Brain, Clock, CircleCheck, CircleX, ChevronRight } from 'lucide-react';
+import { Brain, Clock, CircleCheck, CircleX, ChevronRight, Sparkles } from 'lucide-react';
 import translations from '../utils/translations';
+import AIQuizGenerator from '../components/quiz/AIQuizGenerator';
+import { GeneratedQuestion } from '../services/aiAgents';
 
 interface QuizItem {
   id: string;
@@ -16,7 +18,8 @@ interface QuizItem {
 const QuizPage = () => {
   const { user, language } = useUser();
   const t = translations[language];
-  const [activeTab, setActiveTab] = useState<'available' | 'completed'>('available');
+  const [activeTab, setActiveTab] = useState<'available' | 'completed' | 'ai-generator'>('ai-generator');
+  const [generatedQuiz, setGeneratedQuiz] = useState<{questions: GeneratedQuestion[], metadata: any} | null>(null);
   
   if (!user) return null;
 
@@ -80,6 +83,11 @@ const QuizPage = () => {
     }
   ].filter(quiz => user.subjects.includes(quiz.subject as any));
 
+  const handleQuizGenerated = (questions: GeneratedQuestion[], metadata: any) => {
+    setGeneratedQuiz({ questions, metadata });
+    setActiveTab('ai-generated');
+  };
+
   const getDifficultyLabel = (difficulty: string) => {
     switch(difficulty) {
       case 'easy':
@@ -128,21 +136,32 @@ const QuizPage = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
           {t.quizzes}
         </h1>
         <p className="text-gray-600">
           {language === 'english'
-            ? 'Test your knowledge with board-pattern quizzes tailored to your syllabus.'
-            : 'اپنے نصاب کے مطابق بورڈ پیٹرن کوئزز کے ساتھ اپنے علم کا امتحان لیں۔'
+            ? 'Generate AI-powered quizzes or practice with pre-made tests tailored to your syllabus.'
+            : 'اے آئی پاور کوئزز بنائیں یا اپنے نصاب کے مطابق تیار شدہ ٹیسٹس کے ساتھ پریکٹس کریں۔'
           }
         </p>
       </div>
 
       {/* Tab selector */}
       <div className="bg-gray-100 p-1 rounded-lg inline-flex mb-6">
+        <button
+          onClick={() => setActiveTab('ai-generator')}
+          className={`px-4 py-2 rounded-md text-sm font-medium flex items-center ${
+            activeTab === 'ai-generator'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Sparkles size={16} className="mr-2" />
+          {language === 'english' ? 'AI Quiz Generator' : 'اے آئی کوئز جنریٹر'}
+        </button>
         <button
           onClick={() => setActiveTab('available')}
           className={`px-4 py-2 rounded-md text-sm font-medium ${
@@ -163,7 +182,95 @@ const QuizPage = () => {
         >
           {language === 'english' ? 'Completed Quizzes' : 'مکمل کردہ کوئزز'}
         </button>
+        {generatedQuiz && (
+          <button
+            onClick={() => setActiveTab('ai-generated')}
+            className={`px-4 py-2 rounded-md text-sm font-medium ${
+              activeTab === 'ai-generated'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            {language === 'english' ? 'Generated Quiz' : 'بنایا گیا کوئز'}
+          </button>
+        )}
       </div>
+
+      {/* AI Quiz Generator */}
+      {activeTab === 'ai-generator' && (
+        <AIQuizGenerator onQuizGenerated={handleQuizGenerated} />
+      )}
+
+      {/* Generated Quiz Display */}
+      {activeTab === 'ai-generated' && generatedQuiz && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                <Sparkles className="text-blue-600 mr-2" size={24} />
+                {language === 'english' ? 'AI Generated Quiz' : 'اے آئی بنایا گیا کوئز'}
+              </h3>
+              <p className="text-gray-600 mt-1">
+                {generatedQuiz.questions.length} {language === 'english' ? 'questions' : 'سوالات'} • 
+                {generatedQuiz.metadata.subject} • 
+                {generatedQuiz.metadata.board} Board
+              </p>
+            </div>
+            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+              {language === 'english' ? 'Start Quiz' : 'کوئز شروع کریں'}
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {generatedQuiz.questions.slice(0, 3).map((question, index) => (
+              <div key={question.id} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center mb-2">
+                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
+                        {question.type}
+                      </span>
+                      <span className={`ml-2 text-xs font-medium px-2 py-1 rounded ${getDifficultyColor(question.difficulty)}`}>
+                        {getDifficultyLabel(question.difficulty)}
+                      </span>
+                      <span className="ml-2 text-xs text-gray-500">
+                        {question.marks} {language === 'english' ? 'marks' : 'نمبر'}
+                      </span>
+                    </div>
+                    <h4 className="font-medium text-gray-900 mb-2">
+                      Q{index + 1}. {question.questionText}
+                    </h4>
+                    {question.options && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+                        {Object.entries(question.options).map(([key, value]) => (
+                          <div key={key} className="flex items-center p-2 bg-gray-50 rounded">
+                            <span className="font-medium text-gray-700 mr-2">{key.toUpperCase()})</span>
+                            <span className="text-gray-700">{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500">
+                  Topic: {question.topic} • Learning Objective: {question.learningObjective}
+                </div>
+              </div>
+            ))}
+            
+            {generatedQuiz.questions.length > 3 && (
+              <div className="text-center py-4">
+                <p className="text-gray-600">
+                  {language === 'english' 
+                    ? `... and ${generatedQuiz.questions.length - 3} more questions`
+                    : `... اور ${generatedQuiz.questions.length - 3} مزید سوالات`
+                  }
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Available Quizzes */}
       {activeTab === 'available' && (
@@ -275,10 +382,10 @@ const QuizPage = () => {
                 }
               </p>
               <button 
-                onClick={() => setActiveTab('available')}
+                onClick={() => setActiveTab('ai-generator')}
                 className="text-blue-600 font-medium text-sm hover:text-blue-700"
               >
-                {language === 'english' ? 'Browse available quizzes' : 'دستیاب کوئز براؤز کریں'}
+                {language === 'english' ? 'Generate your first AI quiz' : 'اپنی پہلی اے آئی کوئز بنائیں'}
               </button>
             </div>
           )}
