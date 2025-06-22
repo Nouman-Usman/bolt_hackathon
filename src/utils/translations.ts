@@ -173,7 +173,7 @@ const translations = {
     quizTitle: "اپنے علم کا امتحان لیں",
     questionOf: "سوال {current} از {total}",
     check: "جواب چیک کریں",
-    next: "اگلا سوال",
+    nextQuestion: "اگلا سوال",
     complete: "کوئز مکمل کریں",
     
     // Flashcards
