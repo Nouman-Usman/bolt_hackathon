@@ -50,7 +50,7 @@ const translations = {
     quizTitle: "Test Your Knowledge",
     questionOf: "Question {current} of {total}",
     check: "Check Answer",
-    next: "Next Question",
+    nextQuestion: "Next Question",
     complete: "Complete Quiz",
     
     // Flashcards
