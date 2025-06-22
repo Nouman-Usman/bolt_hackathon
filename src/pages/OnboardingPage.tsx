@@ -16,11 +16,19 @@ import {
   Globe,
   Sparkles,
   Users,
-  Trophy
+  Trophy,
+  BookOpen,
+  Microscope,
+  Calculator,
+  Palette,
+  Home,
+  TrendingUp,
+  Laptop
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import translations from '../utils/translations';
-import { Board, Subject, Grade } from '../types/user';
+import { Board, Subject, Grade, HSCCategory } from '../types/user';
+import { subjectGroups, matricSubjects, getCompulsorySubjects, getElectiveSubjects } from '../utils/subjectGroups';
 
 const OnboardingPage = () => {
   const { updateProfile } = useAuth();
@@ -32,6 +40,7 @@ const OnboardingPage = () => {
   const [formData, setFormData] = useState({
     grade: '' as Grade,
     board: '' as Board,
+    hscCategory: '' as HSCCategory,
     subjects: [] as Subject[],
     examDate: '',
     weeklyHours: 10,
@@ -39,7 +48,7 @@ const OnboardingPage = () => {
     studyGoals: [] as string[]
   });
 
-  const totalSteps = 4;
+  const totalSteps = 5; // Updated to include HSC category step
 
   const handleContinue = async () => {
     if (step < totalSteps - 1) {
@@ -75,7 +84,28 @@ const OnboardingPage = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleCategorySelect = (category: HSCCategory) => {
+    const compulsorySubjects = getCompulsorySubjects(category);
+    setFormData({
+      ...formData,
+      hscCategory: category,
+      subjects: compulsorySubjects // Auto-select compulsory subjects
+    });
+  };
+
   const handleSubjectToggle = (subject: Subject) => {
+    const isHSC = formData.grade === '11th' || formData.grade === '12th';
+    
+    if (isHSC && formData.hscCategory) {
+      const compulsorySubjects = getCompulsorySubjects(formData.hscCategory);
+      const isCompulsory = compulsorySubjects.includes(subject);
+      
+      // Don't allow deselecting compulsory subjects
+      if (isCompulsory && formData.subjects.includes(subject)) {
+        return;
+      }
+    }
+
     setFormData({
       ...formData,
       subjects: formData.subjects.includes(subject)
@@ -102,9 +132,15 @@ const OnboardingPage = () => {
   const canContinue = () => {
     switch (step) {
       case 0: return !!formData.grade && !!formData.board;
-      case 1: return formData.subjects.length > 0;
-      case 2: return !!formData.examDate;
-      case 3: return true;
+      case 1: 
+        // For HSC students, require category selection
+        if (formData.grade === '11th' || formData.grade === '12th') {
+          return !!formData.hscCategory;
+        }
+        return true; // Skip category step for 9th/10th
+      case 2: return formData.subjects.length > 0;
+      case 3: return !!formData.examDate;
+      case 4: return true;
       default: return false;
     }
   };
@@ -113,6 +149,19 @@ const OnboardingPage = () => {
     hidden: { opacity: 0, x: 50 },
     visible: { opacity: 1, x: 0 },
     exit: { opacity: 0, x: -50 }
+  };
+
+  const getCategoryIcon = (category: HSCCategory) => {
+    switch (category) {
+      case 'Pre-Engineering': return <Calculator className="text-blue-600" size={32} />;
+      case 'Pre-Medical': return <Microscope className="text-green-600" size={32} />;
+      case 'Computer Science': return <Laptop className="text-purple-600" size={32} />;
+      case 'Commerce': return <TrendingUp className="text-orange-600" size={32} />;
+      case 'Arts': return <Palette className="text-pink-600" size={32} />;
+      case 'General Science': return <BookOpen className="text-indigo-600" size={32} />;
+      case 'Home Economics': return <Home className="text-teal-600" size={32} />;
+      default: return <Book className="text-gray-600" size={32} />;
+    }
   };
 
   const steps = [
@@ -186,10 +235,10 @@ const OnboardingPage = () => {
             <option value="">
               {language === 'english' ? 'Select your grade' : 'اپنی جماعت منتخب کریں'}
             </option>
-            <option value="9th">9th</option>
-            <option value="10th">10th (Matric)</option>
-            <option value="11th">11th (F.Sc Part I)</option>
-            <option value="12th">12th (F.Sc Part II)</option>
+            <option value="9th">9th (SSC Part I)</option>
+            <option value="10th">10th (SSC Part II / Matric)</option>
+            <option value="11th">11th (HSSC Part I / F.Sc Part I)</option>
+            <option value="12th">12th (HSSC Part II / F.Sc Part II)</option>
           </select>
         </div>
         
@@ -205,7 +254,7 @@ const OnboardingPage = () => {
             <option value="">
               {language === 'english' ? 'Select your board' : 'اپنا بورڈ منتخب کریں'}
             </option>
-            <option value="Punjab">Punjab Board</option>
+            <option value="Punjab">Punjab Board (BISE)</option>
             <option value="Sindh">Sindh Board</option>
             <option value="KPK">KPK Board</option>
             <option value="Balochistan">Balochistan Board</option>
@@ -216,7 +265,66 @@ const OnboardingPage = () => {
       </div>
     </motion.div>,
 
-    // Step 2: Subject Selection
+    // Step 2: HSC Category Selection (only for 11th/12th)
+    <motion.div 
+      key="category"
+      variants={stepVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      className="text-center"
+    >
+      <div className="flex justify-center mb-6">
+        <div className="bg-gradient-to-br from-purple-100 to-pink-100 p-6 rounded-full">
+          <GraduationCap size={48} className="text-purple-600" />
+        </div>
+      </div>
+      <h2 className="text-3xl font-bold text-gray-900 mb-4">
+        {language === 'english' ? 'Choose Your Stream' : 'اپنا شعبہ منتخب کریں'}
+      </h2>
+      <p className="text-gray-600 mb-8 max-w-md mx-auto">
+        {language === 'english' 
+          ? 'Select your field of study for HSSC (11th/12th grade). This will determine your subject combination.'
+          : 'HSSC (11ویں/12ویں جماعت) کے لیے اپنا مطالعہ کا شعبہ منتخب کریں۔ یہ آپ کے مضامین کا امتزاج طے کرے گا۔'
+        }
+      </p>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
+        {subjectGroups.map((group) => (
+          <button
+            key={group.category}
+            type="button"
+            onClick={() => handleCategorySelect(group.category)}
+            className={`relative p-6 border-2 rounded-xl transition-all duration-200 text-left ${
+              formData.hscCategory === group.category
+                ? 'border-blue-500 bg-blue-50 shadow-lg scale-105'
+                : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+            }`}
+          >
+            <div className="flex items-center mb-4">
+              {getCategoryIcon(group.category)}
+              <h3 className="font-semibold text-gray-900 ml-3">{group.category}</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">
+              {language === 'english' ? group.description.english : group.description.urdu}
+            </p>
+            <div className="text-xs text-gray-500">
+              <strong>{language === 'english' ? 'Core subjects:' : 'بنیادی مضامین:'}</strong>
+              <br />
+              {group.compulsorySubjects.slice(0, 3).join(', ')}
+              {group.compulsorySubjects.length > 3 && '...'}
+            </div>
+            {formData.hscCategory === group.category && (
+              <div className="absolute -top-2 -right-2">
+                <CheckCircle2 size={24} className="text-blue-500" />
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+    </motion.div>,
+
+    // Step 3: Subject Selection
     <motion.div 
       key="subjects"
       variants={stepVariants}
@@ -231,46 +339,67 @@ const OnboardingPage = () => {
         </div>
       </div>
       <h2 className="text-3xl font-bold text-gray-900 mb-4">
-        {language === 'english' ? 'Choose Your Subjects' : 'اپنے مضامین منتخب کریں'}
+        {language === 'english' ? 'Select Your Subjects' : 'اپنے مضامین منتخب کریں'}
       </h2>
       <p className="text-gray-600 mb-8 max-w-md mx-auto">
         {language === 'english' 
-          ? 'Select the subjects you want to focus on. You can always change these later.'
-          : 'وہ مضامین منتخب کریں جن پر آپ توجہ دینا چاہتے ہیں۔ آپ انہیں بعد میں تبدیل کر سکتے ہیں۔'
+          ? (formData.grade === '11th' || formData.grade === '12th' 
+              ? 'Your compulsory subjects are pre-selected. Choose additional elective subjects.'
+              : 'Select the subjects you want to focus on. You can always change these later.')
+          : (formData.grade === '11th' || formData.grade === '12th'
+              ? 'آپ کے لازمی مضامین پہلے سے منتخب ہیں۔ اضافی اختیاری مضامین منتخب کریں۔'
+              : 'وہ مضامین منتخب کریں جن پر آپ توجہ دینا چاہتے ہیں۔ آپ انہیں بعد میں تبدیل کر سکتے ہیں۔')
         }
       </p>
       
+      {/* Show category info for HSC students */}
+      {(formData.grade === '11th' || formData.grade === '12th') && formData.hscCategory && (
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg max-w-2xl mx-auto">
+          <h3 className="font-semibold text-blue-900 mb-2">
+            {formData.hscCategory} - {language === 'english' ? 'Subject Structure' : 'مضامین کی ساخت'}
+          </h3>
+          <div className="text-sm text-blue-800">
+            <p><strong>{language === 'english' ? 'Compulsory:' : 'لازمی:'}</strong> {getCompulsorySubjects(formData.hscCategory).join(', ')}</p>
+            <p className="mt-1"><strong>{language === 'english' ? 'Choose from electives:' : 'اختیاری میں سے منتخب کریں:'}</strong> {getElectiveSubjects(formData.hscCategory).join(', ')}</p>
+          </div>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
-        {[
-          { name: 'Physics', icon: '⚛️', color: 'blue' },
-          { name: 'Chemistry', icon: '🧪', color: 'green' },
-          { name: 'Biology', icon: '🧬', color: 'purple' },
-          { name: 'Mathematics', icon: '📐', color: 'red' },
-          { name: 'Computer Science', icon: '💻', color: 'indigo' },
-          { name: 'English', icon: '📚', color: 'yellow' },
-          { name: 'Urdu', icon: '📖', color: 'pink' },
-          { name: 'Islamiat', icon: '🕌', color: 'emerald' },
-          { name: 'Pakistan Studies', icon: '🏛️', color: 'orange' }
-        ].map((subject) => (
-          <button
-            key={subject.name}
-            type="button"
-            onClick={() => handleSubjectToggle(subject.name as Subject)}
-            className={`relative p-6 border-2 rounded-xl transition-all duration-200 ${
-              formData.subjects.includes(subject.name as Subject)
-                ? `border-${subject.color}-500 bg-${subject.color}-50 shadow-lg scale-105`
-                : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-            }`}
-          >
-            <div className="text-3xl mb-3">{subject.icon}</div>
-            <h3 className="font-semibold text-gray-900">{subject.name}</h3>
-            {formData.subjects.includes(subject.name as Subject) && (
-              <div className="absolute -top-2 -right-2">
-                <CheckCircle2 size={24} className={`text-${subject.color}-500`} />
-              </div>
-            )}
-          </button>
-        ))}
+        {(formData.grade === '9th' || formData.grade === '10th' ? matricSubjects : 
+          formData.hscCategory ? [...getCompulsorySubjects(formData.hscCategory), ...getElectiveSubjects(formData.hscCategory)] : []
+        ).map((subject) => {
+          const isSelected = formData.subjects.includes(subject);
+          const isCompulsory = formData.hscCategory ? getCompulsorySubjects(formData.hscCategory).includes(subject) : false;
+          
+          return (
+            <button
+              key={subject}
+              type="button"
+              onClick={() => handleSubjectToggle(subject)}
+              disabled={isCompulsory && isSelected}
+              className={`relative p-4 border-2 rounded-xl transition-all duration-200 ${
+                isSelected
+                  ? isCompulsory 
+                    ? 'border-green-500 bg-green-50 shadow-lg'
+                    : 'border-blue-500 bg-blue-50 shadow-lg'
+                  : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+              } ${isCompulsory && isSelected ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+            >
+              <h3 className="font-semibold text-gray-900">{subject}</h3>
+              {isCompulsory && (
+                <div className="text-xs text-green-600 mt-1 font-medium">
+                  {language === 'english' ? 'Compulsory' : 'لازمی'}
+                </div>
+              )}
+              {isSelected && (
+                <div className="absolute -top-2 -right-2">
+                  <CheckCircle2 size={24} className={isCompulsory ? 'text-green-500' : 'text-blue-500'} />
+                </div>
+              )}
+            </button>
+          );
+        })}
       </div>
       
       <div className="mt-6 text-sm text-gray-500">
@@ -278,7 +407,7 @@ const OnboardingPage = () => {
       </div>
     </motion.div>,
 
-    // Step 3: Exam Date & Study Schedule
+    // Step 4: Exam Date & Study Schedule
     <motion.div 
       key="schedule"
       variants={stepVariants}
@@ -315,6 +444,12 @@ const OnboardingPage = () => {
             min={new Date().toISOString().split('T')[0]}
             className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
           />
+          <div className="mt-2 text-xs text-gray-500">
+            {language === 'english' 
+              ? 'Typical board exam dates: March-May (Annual), September-October (Supplementary)'
+              : 'عام بورڈ امتحان کی تاریخیں: مارچ-مئی (سالانہ)، ستمبر-اکتوبر (اضافی)'
+            }
+          </div>
         </div>
         
         <div>
@@ -355,7 +490,7 @@ const OnboardingPage = () => {
       </div>
     </motion.div>,
 
-    // Step 4: Goals & Motivation
+    // Step 5: Goals & Motivation
     <motion.div 
       key="goals"
       variants={stepVariants}
@@ -385,7 +520,7 @@ const OnboardingPage = () => {
             id: 'high_grades',
             title: language === 'english' ? 'Get High Grades' : 'اعلیٰ نمبرات حاصل کریں',
             icon: <Trophy className="text-yellow-500" size={24} />,
-            description: language === 'english' ? 'Score 80%+ in exams' : 'امتحانات میں 80%+ اسکور کریں'
+            description: language === 'english' ? 'Score 80%+ in board exams' : 'بورڈ امتحانات میں 80%+ اسکور کریں'
           },
           {
             id: 'understand_concepts',
@@ -395,9 +530,9 @@ const OnboardingPage = () => {
           },
           {
             id: 'exam_preparation',
-            title: language === 'english' ? 'Exam Preparation' : 'امتحان کی تیاری',
+            title: language === 'english' ? 'Board Exam Preparation' : 'بورڈ امتحان کی تیاری',
             icon: <GraduationCap className="text-purple-500" size={24} />,
-            description: language === 'english' ? 'Systematic exam prep' : 'منظم امتحان کی تیاری'
+            description: language === 'english' ? 'Systematic board exam prep' : 'منظم بورڈ امتحان کی تیاری'
           },
           {
             id: 'time_management',
@@ -439,13 +574,25 @@ const OnboardingPage = () => {
         </div>
         <p className="text-sm text-gray-600">
           {language === 'english' 
-            ? 'We\'ll create a personalized study plan based on your preferences.'
-            : 'ہم آپ کی ترجیحات کی بنیاد پر ایک ذاتی مطالعہ کا منصوبہ بنائیں گے۔'
+            ? 'We\'ll create a personalized study plan based on your board exam schedule and subject combination.'
+            : 'ہم آپ کے بورڈ امتحان کے شیڈول اور مضامین کے امتزاج کی بنیاد پر ایک ذاتی مطالعہ کا منصوبہ بنائیں گے۔'
           }
         </p>
       </div>
     </motion.div>
   ];
+
+  // Filter steps based on grade
+  const filteredSteps = steps.filter((_, index) => {
+    // Skip HSC category step for 9th/10th grade students
+    if (index === 1 && (formData.grade === '9th' || formData.grade === '10th')) {
+      return false;
+    }
+    return true;
+  });
+
+  const currentStep = filteredSteps[step];
+  const adjustedTotalSteps = filteredSteps.length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -453,7 +600,7 @@ const OnboardingPage = () => {
         {/* Progress indicator */}
         <div className="mb-8">
           <div className="flex justify-center items-center space-x-4 mb-4">
-            {Array.from({ length: totalSteps }, (_, i) => (
+            {Array.from({ length: adjustedTotalSteps }, (_, i) => (
               <div key={i} className="flex items-center">
                 <div 
                   className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
@@ -464,7 +611,7 @@ const OnboardingPage = () => {
                 >
                   {i < step ? <CheckCircle2 size={20} /> : i + 1}
                 </div>
-                {i < totalSteps - 1 && (
+                {i < adjustedTotalSteps - 1 && (
                   <div 
                     className={`w-16 h-1 mx-2 rounded-full transition-all duration-300 ${
                       i < step ? 'bg-blue-600' : 'bg-gray-200'
@@ -476,7 +623,7 @@ const OnboardingPage = () => {
           </div>
           <div className="text-center">
             <span className="text-sm text-gray-500">
-              {language === 'english' ? 'Step' : 'قدم'} {step + 1} {language === 'english' ? 'of' : 'از'} {totalSteps}
+              {language === 'english' ? 'Step' : 'قدم'} {step + 1} {language === 'english' ? 'of' : 'از'} {adjustedTotalSteps}
             </span>
           </div>
         </div>
@@ -485,7 +632,7 @@ const OnboardingPage = () => {
         <div className="bg-white rounded-2xl shadow-xl p-8 min-h-[600px] flex items-center justify-center">
           <div className="w-full">
             <AnimatePresence mode="wait">
-              {steps[step]}
+              {currentStep}
             </AnimatePresence>
           </div>
         </div>
@@ -513,7 +660,7 @@ const OnboardingPage = () => {
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            {step === totalSteps - 1 ? (
+            {step === adjustedTotalSteps - 1 ? (
               <>
                 <Sparkles size={18} className="mr-2" />
                 {t.startLearning}

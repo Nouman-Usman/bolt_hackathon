@@ -23,7 +23,40 @@ export type Subject =
   | 'English'
   | 'Urdu'
   | 'Islamiat'
-  | 'Pakistan Studies';
+  | 'Pakistan Studies'
+  | 'Economics'
+  | 'Statistics'
+  | 'Psychology'
+  | 'Sociology'
+  | 'Philosophy'
+  | 'Fine Arts'
+  | 'Home Economics'
+  | 'Geography'
+  | 'History'
+  | 'Civics'
+  | 'Arabic'
+  | 'Persian'
+  | 'French'
+  | 'German';
+
+export type HSCCategory = 
+  | 'Pre-Engineering'
+  | 'Pre-Medical'
+  | 'Computer Science'
+  | 'Commerce'
+  | 'Arts'
+  | 'General Science'
+  | 'Home Economics';
+
+export interface SubjectGroup {
+  category: HSCCategory;
+  compulsorySubjects: Subject[];
+  electiveSubjects: Subject[];
+  description: {
+    english: string;
+    urdu: string;
+  };
+}
 
 export interface UserProfile {
   id: string;
@@ -32,6 +65,7 @@ export interface UserProfile {
   grade: Grade;
   board: Board;
   subjects: Subject[];
+  hscCategory?: HSCCategory; // For 11th and 12th grade students
   languagePreference: LanguagePreference;
   examDate?: string;
   weeklyAvailableHours?: number;
