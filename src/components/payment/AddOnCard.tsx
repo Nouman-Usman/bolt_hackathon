@@ -100,7 +100,7 @@ const AddOnCard: React.FC<AddOnCardProps> = ({ addOn, onPurchase, isLoading }) =
       >
         {isLoading 
           ? (language === 'english' ? 'Processing...' : 'پروسیسنگ...')
-          : (language === 'english' ? 'Purchase' : 'خریدیں')
+          : (language === 'english' ? 'Purchase (Demo)' : 'خریدیں (ڈیمو)')
         }
       </button>
     </div>

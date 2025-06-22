@@ -11,9 +11,13 @@ const PaymentSuccessPage = () => {
   const t = translations[language];
 
   useEffect(() => {
-    // In a real app, you would verify the payment status here
-    // and update the user's subscription status
-  }, []);
+    // Redirect to dashboard after 3 seconds
+    const timer = setTimeout(() => {
+      navigate('/dashboard');
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   const handleContinue = () => {
     navigate('/dashboard');
@@ -37,13 +41,13 @@ const PaymentSuccessPage = () => {
         </motion.div>
 
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          {language === 'english' ? 'Payment Successful!' : 'ادائیگی کامیاب!'}
+          {language === 'english' ? 'Demo Mode Active!' : 'ڈیمو موڈ فعال!'}
         </h1>
         
         <p className="text-gray-600 mb-6">
           {language === 'english'
-            ? 'Welcome to StudyGenius Premium! Your account has been upgraded successfully.'
-            : 'StudyGenius Premium میں خوش آمدید! آپ کا اکاؤنٹ کامیابی سے اپگریڈ ہو گیا ہے۔'
+            ? 'You can now explore all StudyGenius features. Payment integration will be available soon!'
+            : 'اب آپ StudyGenius کے تمام فیچرز دیکھ سکتے ہیں۔ ادائیگی کا انٹیگریشن جلد دستیاب ہوگا!'
           }
         </p>
 
@@ -51,7 +55,7 @@ const PaymentSuccessPage = () => {
           <div className="flex items-center justify-center mb-3">
             <Crown className="text-yellow-500 mr-2" size={24} />
             <span className="font-semibold text-gray-900">
-              {language === 'english' ? 'Premium Features Unlocked' : 'پریمیم فیچرز کھل گئے'}
+              {language === 'english' ? 'All Features Available' : 'تمام فیچرز دستیاب'}
             </span>
           </div>
           
@@ -73,8 +77,8 @@ const PaymentSuccessPage = () => {
 
         <p className="text-xs text-gray-500 mt-4">
           {language === 'english'
-            ? 'A confirmation email has been sent to your registered email address.'
-            : 'آپ کے رجسٹرڈ ای میل ایڈریس پر تصدیقی ای میل بھیج دی گئی ہے۔'
+            ? 'Redirecting to dashboard in 3 seconds...'
+            : '3 سیکنڈ میں ڈیش بورڈ پر بھیجا جا رہا ہے...'
           }
         </p>
       </motion.div>

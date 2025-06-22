@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useUser } from '../contexts/UserContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { useNavigate } from 'react-router-dom';
-import { useStripe } from '@stripe/react-stripe-js';
 import { Crown, Check, X, ArrowLeft, Users, Building, Star, Gift, Clock, Zap, Shield, BookOpen } from 'lucide-react';
 import PricingCard from '../components/payment/PricingCard';
 import AddOnCard from '../components/payment/AddOnCard';
@@ -15,7 +14,6 @@ const EnhancedPricingPage = () => {
   const { user, language } = useUser();
   const { activeCampaign, getDiscountedPrice } = useSubscription();
   const navigate = useNavigate();
-  const stripe = useStripe();
   const t = translations[language];
   const [isLoading, setIsLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState<'individual' | 'institutional'>('individual');
@@ -310,80 +308,44 @@ const EnhancedPricingPage = () => {
 
     if (plan.id === 'enterprise') {
       // Redirect to contact form
-      navigate('/contact-enterprise');
-      return;
-    }
-
-    if (!stripe) {
-      console.error('Stripe not initialized');
+      alert(language === 'english' 
+        ? 'Enterprise plan selected. Contact information will be available soon.'
+        : 'انٹرپرائز پلان منتخب کیا گیا۔ رابطے کی معلومات جلد دستیاب ہوں گی۔'
+      );
       return;
     }
 
     setIsLoading(true);
     
     try {
-      // Create checkout session
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          priceId: plan.stripePriceId,
-          userId: user?.id,
-          planType: plan.type,
-          successUrl: `${window.location.origin}/payment-success`,
-          cancelUrl: `${window.location.origin}/pricing`,
-        }),
-      });
-
-      const { sessionId } = await response.json();
-      
-      // Redirect to Stripe Checkout
-      const { error } = await stripe.redirectToCheckout({ sessionId });
-      if (error) {
-        console.error('Stripe error:', error);
-      }
+      // Simulate plan selection
+      setTimeout(() => {
+        alert(language === 'english' 
+          ? `${plan.name} plan selected! Payment integration will be available soon.`
+          : `${plan.nameUrdu} پلان منتخب کیا گیا! ادائیگی کا انٹیگریشن جلد دستیاب ہوگا۔`
+        );
+        setIsLoading(false);
+      }, 1000);
     } catch (error) {
-      console.error('Error creating checkout session:', error);
-    } finally {
+      console.error('Error selecting plan:', error);
       setIsLoading(false);
     }
   };
 
   const handlePurchaseAddOn = async (addOn: AddOn) => {
-    if (!stripe) {
-      console.error('Stripe not initialized');
-      return;
-    }
-
     setIsLoading(true);
     
     try {
-      // Similar to plan purchase but for add-ons
-      const response = await fetch('/api/create-addon-checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          priceId: addOn.stripePriceId,
-          userId: user?.id,
-          addOnType: addOn.type,
-          successUrl: `${window.location.origin}/payment-success`,
-          cancelUrl: `${window.location.origin}/pricing`,
-        }),
-      });
-
-      const { sessionId } = await response.json();
-      
-      const { error } = await stripe.redirectToCheckout({ sessionId });
-      if (error) {
-        console.error('Stripe error:', error);
-      }
+      // Simulate add-on purchase
+      setTimeout(() => {
+        alert(language === 'english' 
+          ? `${addOn.name} add-on selected! Payment integration will be available soon.`
+          : `${addOn.nameUrdu} ایڈ آن منتخب کیا گیا! ادائیگی کا انٹیگریشن جلد دستیاب ہوگا۔`
+        );
+        setIsLoading(false);
+      }, 1000);
     } catch (error) {
       console.error('Error purchasing add-on:', error);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -409,6 +371,16 @@ const EnhancedPricingPage = () => {
               : 'ہمارے اے آئی پاور اسٹڈی کوچ کے ساتھ اپنی مکمل صلاحیت کو کھولیں۔ انفرادی طلباء سے لے کر پورے اداروں تک۔'
             }
           </p>
+          
+          {/* Demo Notice */}
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg max-w-2xl mx-auto">
+            <p className="text-blue-800 text-sm">
+              {language === 'english'
+                ? '🚀 Demo Mode: Payment integration coming soon. Explore all features now!'
+                : '🚀 ڈیمو موڈ: ادائیگی کا انٹیگریشن جلد آرہا ہے۔ ابھی تمام فیچرز دیکھیں!'
+              }
+            </p>
+          </div>
         </div>
       </div>
 
@@ -550,28 +522,28 @@ const EnhancedPricingPage = () => {
         <div className="grid md:grid-cols-2 gap-8">
           {[
             {
-              q: language === 'english' ? 'Can I cancel anytime?' : 'کیا میں کسی بھی وقت منسوخ کر سکتا ہوں؟',
+              q: language === 'english' ? 'When will payment processing be available?' : 'ادائیگی کی پروسیسنگ کب دستیاب ہوگی؟',
               a: language === 'english'
-                ? 'Yes, you can cancel your subscription at any time. You\'ll continue to have access until the end of your billing period.'
-                : 'جی ہاں، آپ اپنی سبسکرپشن کسی بھی وقت منسوخ کر سکتے ہیں۔ آپ کو اپنے بلنگ پیریڈ کے اختتام تک رسائی حاصل رہے گی۔'
+                ? 'Payment integration is coming soon. You can explore all features in demo mode for now.'
+                : 'ادائیگی کا انٹیگریشن جلد آرہا ہے۔ فی الوقت آپ ڈیمو موڈ میں تمام فیچرز دیکھ سکتے ہیں۔'
             },
             {
-              q: language === 'english' ? 'Is my payment secure?' : 'کیا میری ادائیگی محفوظ ہے؟',
+              q: language === 'english' ? 'Will my data be secure?' : 'کیا میرا ڈیٹا محفوظ ہوگا؟',
               a: language === 'english'
-                ? 'Absolutely. We use Stripe for payment processing, which is bank-level secure and trusted by millions worldwide.'
-                : 'بالکل۔ ہم ادائیگی کے لیے Stripe استعمال کرتے ہیں، جو بینک کی سطح کا محفوظ اور دنیا بھر میں لاکھوں لوگوں کا بھروسہ ہے۔'
+                ? 'Absolutely. We use bank-level security and never share your personal information.'
+                : 'بالکل۔ ہم بینک کی سطح کا سیکیورٹی استعمال کرتے ہیں اور آپ کی ذاتی معلومات کبھی شیئر نہیں کرتے۔'
             },
             {
               q: language === 'english' ? 'Do you offer discounts for rural students?' : 'کیا آپ دیہی طلباء کے لیے رعایت دیتے ہیں؟',
               a: language === 'english'
-                ? 'Yes, we have special sponsorship programs for rural students. Contact us for more information.'
-                : 'جی ہاں، ہمارے پاس دیہی طلباء کے لیے خصوصی سپانسرشپ پروگرام ہیں۔ مزید معلومات کے لیے ہم سے رابطہ کریں۔'
+                ? 'Yes, we will have special sponsorship programs for rural students. Contact us for more information.'
+                : 'جی ہاں، ہمارے پاس دیہی طلباء کے لیے خصوصی سپانسرشپ پروگرام ہوں گے۔ مزید معلومات کے لیے ہم سے رابطہ کریں۔'
             },
             {
-              q: language === 'english' ? 'What payment methods do you accept?' : 'آپ کون سے ادائیگی کے طریقے قبول کرتے ہیں؟',
+              q: language === 'english' ? 'Can I try premium features?' : 'کیا میں پریمیم فیچرز آزما سکتا ہوں؟',
               a: language === 'english'
-                ? 'We accept all major credit/debit cards, bank transfers, and mobile wallets like JazzCash and Easypaisa.'
-                : 'ہم تمام بڑے کریڈٹ/ڈیبٹ کارڈز، بینک ٹرانسفرز، اور موبائل والیٹس جیسے JazzCash اور Easypaisa قبول کرتے ہیں۔'
+                ? 'Yes! All features are currently available in demo mode so you can explore everything.'
+                : 'جی ہاں! تمام فیچرز فی الوقت ڈیمو موڈ میں دستیاب ہیں تاکہ آپ سب کچھ دیکھ سکیں۔'
             }
           ].map((faq, index) => (
             <div key={index}>

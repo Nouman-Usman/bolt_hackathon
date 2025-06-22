@@ -1,18 +1,15 @@
 import { useState } from 'react';
-import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { useUser } from '../../contexts/UserContext';
 import { CreditCard, Lock } from 'lucide-react';
 import translations from '../../utils/translations';
 
 interface CheckoutFormProps {
-  clientSecret: string;
+  planId: string;
   onSuccess: () => void;
   onError: (error: string) => void;
 }
 
-const CheckoutForm: React.FC<CheckoutFormProps> = ({ clientSecret, onSuccess, onError }) => {
-  const stripe = useStripe();
-  const elements = useElements();
+const CheckoutForm: React.FC<CheckoutFormProps> = ({ planId, onSuccess, onError }) => {
   const { user, language } = useUser();
   const t = translations[language];
   
@@ -20,75 +17,46 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ clientSecret, onSuccess, on
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-
-    if (!stripe || !elements) {
-      return;
-    }
-
     setIsProcessing(true);
 
-    const cardElement = elements.getElement(CardElement);
-
-    if (!cardElement) {
-      onError(language === 'english' ? 'Card element not found' : 'کارڈ ایلیمنٹ نہیں ملا');
-      setIsProcessing(false);
-      return;
-    }
-
-    const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: {
-        card: cardElement,
-        billing_details: {
-          name: user?.name || '',
-          email: user?.email || '',
-        },
-      },
-    });
-
-    if (error) {
-      onError(error.message || 'Payment failed');
-    } else if (paymentIntent.status === 'succeeded') {
+    // Simulate payment processing
+    setTimeout(() => {
+      // For demo purposes, always succeed
       onSuccess();
-    }
-
-    setIsProcessing(false);
-  };
-
-  const cardElementOptions = {
-    style: {
-      base: {
-        fontSize: '16px',
-        color: '#424770',
-        '::placeholder': {
-          color: '#aab7c4',
-        },
-      },
-    },
+      setIsProcessing(false);
+    }, 2000);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          <CreditCard size={16} className="inline mr-2" />
-          {language === 'english' ? 'Card Information' : 'کارڈ کی معلومات'}
-        </label>
-        <div className="p-4 border border-gray-300 rounded-lg bg-white">
-          <CardElement options={cardElementOptions} />
+      <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="flex items-center text-blue-800">
+          <CreditCard size={20} className="mr-2" />
+          <div>
+            <h3 className="font-semibold">
+              {language === 'english' ? 'Payment Integration Coming Soon' : 'ادائیگی کا انٹیگریشن جلد آرہا ہے'}
+            </h3>
+            <p className="text-sm mt-1">
+              {language === 'english'
+                ? 'Payment processing will be available in the next update. For now, you can explore all premium features.'
+                : 'ادائیگی کی پروسیسنگ اگلی اپڈیٹ میں دستیاب ہوگی۔ فی الوقت، آپ تمام پریمیم فیچرز دیکھ سکتے ہیں۔'
+              }
+            </p>
+          </div>
         </div>
       </div>
 
       <div className="flex items-center text-sm text-gray-500">
         <Lock size={14} className="mr-2" />
         {language === 'english' 
-          ? 'Your payment information is secure and encrypted'
-          : 'آپ کی ادائیگی کی معلومات محفوظ اور خفیہ ہیں'
+          ? 'Your information will be secure when payment processing is enabled'
+          : 'جب ادائیگی کی پروسیسنگ فعال ہوگی تو آپ کی معلومات محفوظ ہوں گی'
         }
       </div>
 
       <button
         type="submit"
-        disabled={!stripe || isProcessing}
+        disabled={isProcessing}
         className={`w-full py-3 px-4 rounded-lg font-medium transition-colors duration-200 ${
           isProcessing
             ? 'bg-gray-400 cursor-not-allowed'
@@ -96,8 +64,8 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ clientSecret, onSuccess, on
         } text-white`}
       >
         {isProcessing
-          ? (language === 'english' ? 'Processing Payment...' : 'ادائیگی پروسیس ہو رہی ہے...')
-          : (language === 'english' ? 'Complete Payment' : 'ادائیگی مکمل کریں')
+          ? (language === 'english' ? 'Processing...' : 'پروسیس ہو رہا ہے...')
+          : (language === 'english' ? 'Continue (Demo Mode)' : 'جاری رکھیں (ڈیمو موڈ)')
         }
       </button>
     </form>

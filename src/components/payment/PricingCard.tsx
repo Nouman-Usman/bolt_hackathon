@@ -32,7 +32,7 @@ const PricingCard: React.FC<PricingCardProps> = ({
     if (isLoading) {
       return language === 'english' ? 'Processing...' : 'پروسیسنگ...';
     }
-    return language === 'english' ? 'Get Started' : 'شروع کریں';
+    return language === 'english' ? 'Select Plan (Demo)' : 'پلان منتخب کریں (ڈیمو)';
   };
 
   const getButtonStyle = () => {
