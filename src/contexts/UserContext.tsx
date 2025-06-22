@@ -9,6 +9,7 @@ interface UserContextType {
   language: LanguagePreference;
   setLanguage: (lang: LanguagePreference) => void;
   logout: () => void;
+  authUser: any; // The authenticated user from Supabase
 }
 
 const UserContext = createContext<UserContextType>({
@@ -18,12 +19,13 @@ const UserContext = createContext<UserContextType>({
   language: 'english',
   setLanguage: () => {},
   logout: () => {},
+  authUser: null,
 });
 
 export const useUser = () => useContext(UserContext);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { userProfile, signOut, updateProfile } = useAuth();
+  const { userProfile, signOut, updateProfile, user: authUser } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [language, setLanguage] = useState<LanguagePreference>(() => {
     const savedLanguage = localStorage.getItem('language');
@@ -33,11 +35,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sync with auth context
   useEffect(() => {
     console.log('UserContext - userProfile changed:', !!userProfile, userProfile?.name);
+    console.log('UserContext - authUser:', !!authUser, authUser?.email);
     setUser(userProfile);
     if (userProfile?.languagePreference) {
       setLanguage(userProfile.languagePreference);
     }
-  }, [userProfile]);
+  }, [userProfile, authUser]);
 
   useEffect(() => {
     localStorage.setItem('language', language);
@@ -49,9 +52,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [language, user, updateProfile]);
 
   // Check if user has completed onboarding
+  // For onboarding check, we need either a complete profile OR at least an authenticated user
   const isOnboarded = Boolean(user && user.grade && user.board && user.subjects?.length);
+  
+  // User is considered "logged in" if they have an authenticated user (even without profile)
+  const hasAuthenticatedUser = Boolean(authUser);
 
-  console.log('UserContext - isOnboarded:', isOnboarded, 'user:', !!user, 'grade:', user?.grade, 'board:', user?.board, 'subjects:', user?.subjects?.length);
+  console.log('UserContext - isOnboarded:', isOnboarded, 'user:', !!user, 'authUser:', !!authUser, 'grade:', user?.grade, 'board:', user?.board, 'subjects:', user?.subjects?.length);
 
   const logout = async () => {
     await signOut();
@@ -67,7 +74,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isOnboarded, 
         language, 
         setLanguage,
-        logout 
+        logout,
+        authUser
       }}
     >
       {children}

@@ -7,20 +7,20 @@ import translations from '../utils/translations';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const HomePage = () => {
-  const { user, isOnboarded, language } = useUser();
+  const { user, isOnboarded, language, authUser } = useUser();
   const { loading } = useAuth();
   const navigate = useNavigate();
   const t = translations[language];
 
   useEffect(() => {
-    console.log('HomePage - loading:', loading, 'user:', !!user, 'isOnboarded:', isOnboarded);
+    console.log('HomePage - loading:', loading, 'authUser:', !!authUser, 'user:', !!user, 'isOnboarded:', isOnboarded);
     
-    // Only redirect if not loading and user exists but is not onboarded
-    if (!loading && user && !isOnboarded) {
-      console.log('Redirecting to onboarding');
+    // Only redirect if not loading and we have an authenticated user but no complete profile
+    if (!loading && authUser && !isOnboarded) {
+      console.log('Redirecting to onboarding - user authenticated but not onboarded');
       navigate('/onboarding');
     }
-  }, [loading, user, isOnboarded, navigate]);
+  }, [loading, authUser, user, isOnboarded, navigate]);
 
   // Show loading while auth is still loading
   if (loading) {
@@ -32,15 +32,25 @@ const HomePage = () => {
     );
   }
 
-  // If no user after loading is complete, ProtectedRoute will handle redirect
-  if (!user) {
-    console.log('HomePage - no user found');
+  // If no authenticated user after loading is complete, ProtectedRoute will handle redirect
+  if (!authUser) {
+    console.log('HomePage - no authenticated user found');
     return null;
   }
 
-  // If user exists but not onboarded, show loading while redirecting
+  // If user is authenticated but not onboarded, show loading while redirecting
   if (!isOnboarded) {
-    console.log('HomePage - user not onboarded, showing loading while redirecting');
+    console.log('HomePage - user authenticated but not onboarded, showing loading while redirecting');
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size={32} />
+      </div>
+    );
+  }
+
+  // At this point, we have an authenticated user with a complete profile
+  if (!user) {
+    console.log('HomePage - unexpected state: onboarded but no user profile');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size={32} />

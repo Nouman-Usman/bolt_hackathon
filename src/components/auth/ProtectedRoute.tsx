@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useUser } from '../../contexts/UserContext';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { AlertCircle, Mail, RefreshCw } from 'lucide-react';
 
@@ -13,19 +14,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requireEmailVerification = false 
 }) => {
-  const { user, loading, emailVerified, resendVerification } = useAuth();
+  const { user: authUser, loading, emailVerified, resendVerification } = useAuth();
+  const { authUser: userContextAuthUser } = useUser();
   const navigate = useNavigate();
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
 
   useEffect(() => {
-    console.log('ProtectedRoute - loading:', loading, 'user:', !!user);
+    console.log('ProtectedRoute - loading:', loading, 'authUser:', !!authUser);
     
-    if (!loading && !user) {
-      console.log('No user found, redirecting to auth');
+    if (!loading && !authUser) {
+      console.log('No authenticated user found, redirecting to auth');
       navigate('/auth');
     }
-  }, [user, loading, navigate]);
+  }, [authUser, loading, navigate]);
 
   const handleResendVerification = async () => {
     setResendLoading(true);
@@ -52,9 +54,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // If no user after loading is complete, return null (will redirect in useEffect)
-  if (!user) {
-    console.log('ProtectedRoute - no user, returning null');
+  // If no authenticated user after loading is complete, return null (will redirect in useEffect)
+  if (!authUser) {
+    console.log('ProtectedRoute - no authenticated user, returning null');
     return null;
   }
 
@@ -73,7 +75,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           
           <p className="text-gray-600 mb-6">
             Please verify your email address to access all features. We've sent a verification link to{' '}
-            <strong>{user.email}</strong>.
+            <strong>{authUser.email}</strong>.
           </p>
 
           {resendMessage && (
